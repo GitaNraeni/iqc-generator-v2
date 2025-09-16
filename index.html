@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IQC GENERATOR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #000;
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* canvas partikel */
+    #particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+    }
+
+    .container {
+      min-height: 100vh;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #60a5fa;
+      text-shadow: 0 0 10px rgba(59,130,246,0.7);
+    }
+    .menu-icon {
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      stroke: #60a5fa;
+      fill: none;
+      stroke-width: 2.5;
+      filter: drop-shadow(0 0 6px #3b82f6);
+      transition: transform 0.3s ease;
+    }
+    .menu-icon:hover { transform: rotate(90deg) scale(1.2); }
+
+    /* modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(12px);
+      display: flex; justify-content: center; align-items: center;
+      visibility: hidden; opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .modal-overlay.show { visibility: visible; opacity: 1; }
+
+    .modal-content {
+      background: rgba(30,41,59,0.4);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 24px;
+      min-width: 260px;
+      text-align: center;
+      color: white;
+      box-shadow: 0 0 25px rgba(59,130,246,0.5);
+      transform: scale(0.8);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .modal-content.show {
+      transform: scale(1);
+      opacity: 1;
+    }
+    .modal-content.hide {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+
+    /* menu list */
+    .menu-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: left;
+    }
+    .menu-list li a {
+      color: #60a5fa;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      transition: all 0.3s ease;
+      box-shadow: 0 0 8px rgba(59,130,246,0.3);
+    }
+    .menu-list li a:hover {
+      background: rgba(59,130,246,0.15);
+      transform: scale(1.05);
+      box-shadow: 0 0 18px rgba(59,130,246,0.6);
+    }
+
+    /* welcome */
+    .welcome {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .welcome h1 {
+      font-size: 30px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #3b82f6, #2563eb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 15px rgba(59,130,246,0.7);
+    }
+    .welcome h2 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #9ca3af;
+    }
+
+    /* input */
+    .input-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .text-input, .setting-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      font-size: 16px;
+      outline: none;
+      transition: border 0.3s ease, box-shadow 0.3s ease;
+    }
+    .text-input::placeholder, .setting-input::placeholder { color: #6b7280; }
+    .text-input:focus, .setting-input:focus {
+      border: 1px solid #3b82f6;
+      box-shadow: 0 0 10px rgba(59,130,246,0.6);
+    }
+
+    /* tombol glowing */
+    .generate-btn {
+      background: linear-gradient(45deg, #3b82f6, #1e40af);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 20px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 20px rgba(59,130,246,0.6);
+      animation: pulseGlow 2s infinite;
+    }
+    .generate-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(59,130,246,0.9);
+    }
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 15px rgba(59,130,246,0.6); }
+      50% { box-shadow: 0 0 25px rgba(59,130,246,1); }
+    }
+
+    /* settings */
+    .settings-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 10px;
+    }
+    .setting-label {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+    .setting-group { display: flex; flex-direction: column; }
+
+    /* results */
+    .results-section {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      margin-top: 20px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .results-section.show { display: flex; opacity: 1; }
+    .result-image {
+      max-width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(59,130,246,0.7);
+      animation: fadeIn 0.6s ease;
+    }
+    @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+    .download-btn {
+      background: linear-gradient(45deg, #06b6d4, #0ea5e9);
+      padding: 12px 20px;
+      border-radius: 14px;
+      color: white;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 0 15px rgba(14,165,233,0.7);
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    .download-btn:hover { transform: scale(1.05); }
+
+    /* footer */
+    footer {
+      margin-top: auto;
+      padding: 20px 0;
+      text-align: center;
+      font-size: 13px;
+      color: #9ca3af;
+      opacity: 0.8;
+    }
+
+    @media (max-width: 480px) {
+      .welcome h1 { font-size: 24px; }
+      .generate-btn { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-title">iPhone Quote Generator</div>
+      <svg class="menu-icon" id="menuIcon" viewBox="0 0 24 24">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-content" id="modalContent">
+        <h3>Menu</h3>
+        <ul class="menu-list">
+          <li><a href="https://gpasschecker.netlify.app" target="_blank"><i class="fas fa-globe"></i> Kalkulator Game Pass</a></li>
+          <li><a href="https://iqc-generator-gray.vercel.app/" target="_blank"><i class="fas fa-globe"></i> IQC GENERATOR V1</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Welcome -->
+    <div class="welcome">
+      <h1>Welcome to iPhone</h1>
+      <h2>Quote Generator</h2>
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+      <input type="text" class="text-input" id="textInput" placeholder="Masukkan teks..." maxlength="200">
+      <button class="generate-btn" id="generateBtn">Generate</button>
+
+      <div class="settings-section">
+        <div class="setting-group">
+          <label class="setting-label">Baterai</label>
+          <input type="text" class="setting-input" id="batteryInput" placeholder="77">
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">Provider</label>
+          <input type="text" class="setting-input" id="carrierInput" placeholder="Telkomsel">
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">Jam</label>
+          <input type="text" class="setting-input" id="timeInput" placeholder="11:11">
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">Signal</label>
+          <select class="setting-input" id="signalSelect">
+            <option value="">Pilih</option>
+            <option value="4">LTE</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+      <p>Hasil:</p>
+      <div id="result"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      © 2025 iPhone Quoted Generator
+    </footer>
+  </div>
+
+  <script>
+    // Partikel interaktif
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+    const mouse = { x: null, y: null };
+
+    class Particle {
+      constructor(x, y, size, speedX, speedY) {
+        this.x = x; this.y = y;
+        this.size = size;
+        this.speedX = speedX;
+        this.speedY = speedY;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.size > 0.2) this.size -= 0.02;
+
+        const dx = this.x - mouse.x;
+        const dy = this.y - mouse.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100 && this.size < 5) {
+          this.x += dx/10;
+          this.y += dy/10;
+        }
+      }
+      draw() {
+        ctx.fillStyle = "rgba(59,130,246,0.7)";
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i=0; i<120; i++) {
+        let x = Math.random()*canvas.width;
+        let y = Math.random()*canvas.height;
+        let size = Math.random()*3 + 1;
+        let speedX = (Math.random()-0.5)*1;
+        let speedY = (Math.random()-0.5)*1;
+        particles.push(new Particle(x,y,size,speedX,speedY));
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      particles.forEach((p,i) => {
+        p.update();
+        p.draw();
+        if (p.size <= 0.3) {
+          particles.splice(i,1);
+          let x = Math.random()*canvas.width;
+          let y = Math.random()*canvas.height;
+          let size = Math.random()*3 + 1;
+          let speedX = (Math.random()-0.5)*1;
+          let speedY = (Math.random()-0.5)*1;
+          particles.push(new Particle(x,y,size,speedX,speedY));
+        }
+      });
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("mousemove", e => {
+      mouse.x = e.x;
+      mouse.y = e.y;
+    });
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initParticles();
+    });
+
+    initParticles();
+    animate();
+
+    // Quote Generator
+    const textInput = document.getElementById('textInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const resultsSection = document.getElementById('resultsSection');
+    const resultDiv = document.getElementById('result');
+    const menuIcon = document.getElementById('menuIcon');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalContent = document.getElementById('modalContent');
+
+    const batteryInput = document.getElementById('batteryInput');
+    const carrierInput = document.getElementById('carrierInput');
+    const timeInput = document.getElementById('timeInput');
+    const signalSelect = document.getElementById('signalSelect');
+
+    function generateImage() {
+      const message = textInput.value.trim();
+      if (!message) {
+        alert("Harap masukkan teks!");
+        return;
+      }
+
+      let batteryPercentage = batteryInput.value.trim() || "77";
+      batteryPercentage = Math.max(0, Math.min(100, parseInt(batteryPercentage) || 77));
+      let carrierName = carrierInput.value.trim() || "Telkomsel";
+      let timeValue = /^\d{1,2}:\d{2}$/.test(timeInput.value.trim()) ? timeInput.value.trim() : "11:11";
+      let signalStrength = signalSelect.value || "4";
+
+      const apiUrl = `https://brat.siputzx.my.id/iphone-quoted?time=${encodeURIComponent(timeValue)}&messageText=${encodeURIComponent(message)}&carrierName=${encodeURIComponent(carrierName)}&batteryPercentage=${batteryPercentage}&signalStrength=${signalStrength}&emojiStyle=apple`;
+
+      resultDiv.innerHTML = `
+        <img src="${apiUrl}" alt="Generated Image" class="result-image">
+        <div style="margin-top:12px; text-align:center;">
+          <a class="download-btn" href="${apiUrl}" download="iphone-quote.png">Download</a>
+        </div>`;
+      resultsSection.classList.add('show');
+    }
+
+    generateBtn.addEventListener('click', generateImage);
+    textInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') generateImage();
+    });
+
+    // Modal open/close with animation
+    menuIcon.addEventListener('click', () => {
+      modalOverlay.classList.add('show');
+      modalContent.classList.remove('hide');
+      modalContent.classList.add('show');
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        modalContent.classList.remove('show');
+        modalContent.classList.add('hide');
+        setTimeout(() => {
+          modalOverlay.classList.remove('show');
+        }, 300);
+      }
+    });
+  </script>
+</body>
+</html>
